@@ -1,6 +1,8 @@
 
 # 这个数据集的存储方式确实空间效率达到了极致，但是对没多少编程IO基础的人来说很不友好
 # 具体数据结构参照 http://yann.lecun.com/exdb/mnist/
+from torch import tensor
+from random import shuffle
 
 class MNISTReader():
     train_img_path = "train-images.idx3-ubyte"
@@ -51,6 +53,8 @@ class MNISTReader():
         return self.total_img
 
     def get_pic(self, id):
+        if id == 0:
+            raise Exception('id从1开始，大傻逼不细心吧！')
         # id从1开始数
         # 一次读取一个，暂时设计成这样，没必要，也懒得优化读取速度了，反正性能主要消耗在训练上，而不是IO
         self.cur_pic = [] # 暂时存储为784长度的列表吧，后续确认像素顺序再说
@@ -60,7 +64,7 @@ class MNISTReader():
 
         for i in range(784):
             # 直接在最初的读取的时候就将数据全部归一化
-            self.cur_pic.append((int.from_bytes(self.img_bytes[img_start: img_start+1], 'big', signed=False))/255)
+            self.cur_pic.append((int.from_bytes(self.img_bytes[img_start: img_start+1], 'big', signed=False)-128)/128)
             img_start += 1
         self.cur_label = int.from_bytes(self.label_bytes[label_start: label_start+1], 'big', signed=False)
         #print(len(self.cur_pic))
@@ -81,6 +85,24 @@ class MNISTReader():
         fig = plt.figure()
         plt.imshow(imdata)
         plt.show()
+
+    def dataIter(self, BatchSize):
+        indices = list(range(1, 1+self.total_img))
+        shuffle(indices)
+        for i in range(0, self.total_img, BatchSize):
+            batch_indices = indices[i: min(i+BatchSize, self.total_img)]
+            features = []
+            labels = []
+            for id in batch_indices:
+                re = self.get_pic(id)
+                if re[1] == 96:
+                    print(id)
+                    print(re[0])
+                    raise IndexError
+                features.append(re[0])
+                labels.append(re[1])
+            yield tensor(features), tensor(labels)
+
 
 
 if __name__ == '__main__':

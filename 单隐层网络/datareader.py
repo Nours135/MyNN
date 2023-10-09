@@ -1,8 +1,11 @@
 
 # 这个数据集的存储方式确实空间效率达到了极致，但是对没多少编程IO基础的人来说很不友好
 # 具体数据结构参照 http://yann.lecun.com/exdb/mnist/
-from torch import tensor
+import torch
+from torch import device as dfun
 from random import shuffle
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print('device: ', device)
 
 class MNISTReader():
     train_img_path = "train-images.idx3-ubyte"
@@ -95,13 +98,9 @@ class MNISTReader():
             labels = []
             for id in batch_indices:
                 re = self.get_pic(id)
-                if re[1] == 96:
-                    print(id)
-                    print(re[0])
-                    raise IndexError
                 features.append(re[0])
                 labels.append(re[1])
-            yield tensor(features), tensor(labels)
+            yield torch.tensor(features, device=device), torch.tensor(labels, device=device)
 
 
 
